@@ -1,5 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,4 +14,27 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  quantity: number;
+};
+
+export const saveCartToFirestore = async (items: CartItem[]) => {
+  const user = auth.currentUser;
+  if (!user) return;
+  await setDoc(doc(db, 'cartItems', user.uid), { items });
+};
+
+export const loadCartFromFirestore = async () => {
+  const user = auth.currentUser;
+  if (!user) return [];
+  const snapshot = await getDoc(doc(db, 'cartItems', user.uid));
+  return snapshot.exists() ? (snapshot.data().items as CartItem[]) : [];
+};
