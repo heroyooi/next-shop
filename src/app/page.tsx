@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import styles from './page.module.scss';
+import Link from 'next/link';
 
 type Product = {
   id: string;
@@ -17,16 +18,19 @@ export default function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const snapshot = await getDocs(collection(db, 'products'));
-      const fetchedProducts: Product[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as Omit<Product, 'id'>;
-        return {
-          id: doc.id,
-          ...data,
-        };
-      });
-
-      setProducts(fetchedProducts);
+      try {
+        const snapshot = await getDocs(collection(db, 'products'));
+        const fetchedProducts: Product[] = snapshot.docs.map((doc) => {
+          const data = doc.data() as Omit<Product, 'id'>;
+          return {
+            ...data,
+            id: doc.id,
+          };
+        });
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error('🔥 상품 불러오기 오류:', error);
+      }
     };
 
     fetchData();
@@ -40,12 +44,19 @@ export default function Home() {
 
       <section className={styles.productList}>
         <h2>🔥 인기 상품</h2>
-        <ul>
+        <ul className={styles.productGrid}>
           {products.map((product) => (
             <li key={product.id} className={styles.productItem}>
-              <img src={product.imageUrl} alt={product.name} />
-              <h3>{product.name}</h3>
-              <p>{product.price.toLocaleString()}원</p>
+              <Link href={`/product/${product.id}`}>
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  width={300}
+                  height={300}
+                />
+                <h3>{product.name}</h3>
+                <p>{product.price.toLocaleString()}원</p>
+              </Link>
             </li>
           ))}
         </ul>
